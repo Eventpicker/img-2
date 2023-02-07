@@ -26,7 +26,6 @@ class Img2 extends HTMLElement {
         this._precache = this._precache.bind(this);
         this._onImgLoad = this._onImgLoad.bind(this);
         this._onImgPreCached = this._onImgPreCached.bind(this);
-
     }
 
     get loaded() {
@@ -39,7 +38,6 @@ class Img2 extends HTMLElement {
      */
     _reset() {
         if (this._loaded === true) this.removeAttribute("loaded");
-        this._inited = false;
         this._rendered = false;
         this._loading = false;
         this._loaded = false;
@@ -48,12 +46,10 @@ class Img2 extends HTMLElement {
     }
 
     connectedCallback() {
-
-        if (window.ShadyCSS) ShadyCSS.styleElement(this);
+        if (window.ShadyCSS && ShadyCSS.styleElement) ShadyCSS.styleElement(this);
         // Override any global settings
-        this._renderOnPreCached = (this.getAttribute("render-on-pre-cached") === "true");
+        this._renderOnPreCached = this.getAttribute("render-on-pre-cached") === "true";
         this._init();
-
     }
 
     _init() {
@@ -62,14 +58,13 @@ class Img2 extends HTMLElement {
         this._src = this.getAttribute("src");
         // Grab the initial attribute values
         this._preview = this.getAttribute("src-preview");
-        this._width = this.getAttribute("width");
-        this._height = this.getAttribute("height");
 
-        if (!this._src || !this._width || !this._height) return;
+//############################################ me out comment because of not using
+        //if (!this._src || !this._width || !this._height) return;
 
         // Set the height and width of the element so that we can figure out if it is on the screen or not
-        this.style.width = `${this._width}px`;
-        this.style.height = `${this._height}px`;
+        this.style.width = `100%`;
+        this.style.height = `100%`;
 
         // Figure out if this image is within view
         Img2.addIntersectListener(this, () => {
@@ -81,7 +76,6 @@ class Img2 extends HTMLElement {
 
         // Listen for precache instruction
         Img2._addPreCacheListener(this._precache, this._src);
-        this._inited = true;
     }
 
     /**
@@ -132,17 +126,19 @@ class Img2 extends HTMLElement {
                 break;
             case "width":
                 this._width = newValue;
+
                 if (this._$preview !== null) this._$preview.width = this._width;
                 if (this._$img !== null) this._$img.width = this._width;
-                this.style.width = `${this._width}px`;
-                if (!this._inited) this._init();
+
+                this.style.width = `${ this._width }px`;
                 break;
             case "height":
                 this._height = newValue;
+
                 if (this._$preview !== null) this._$preview.height = this._height;
                 if (this._$img !== null) this._$img.height = this._height;
-                this.style.height = `${this._height}px`;
-                if (!this._inited) this._init();
+
+                this.style.height = `${ this._height }px`;
                 break;
             case "render-on-pre-cached":
                 this._renderOnPreCached = !(newValue === "false");
@@ -153,7 +149,7 @@ class Img2 extends HTMLElement {
         }
     }
 
-    /** 
+    /**
      * Method used to update an individual attribute on the native image element
      * @param {string} name - The name of the attribute to update
      * @param {string} value - The new attribute value
@@ -176,7 +172,7 @@ class Img2 extends HTMLElement {
         // Render the Shadow Root if not done already (src change can force this method to be called again)
         if (this._root === null) {
             // Attach the Shadow Root to the element
-            this._root = this.attachShadow({mode: "open"});
+            this._root = this.attachShadow({ mode: "open" });
             // Create the initial template with styles
             let $template = document.createElement("template");
             $template.innerHTML = `
@@ -188,7 +184,9 @@ class Img2 extends HTMLElement {
                         outline: none;
                     }
                     img {
-                        position: absolute;
+                        position: relative;
+                        /* height: 100% !important; wegen ios problem  */
+                        width: 100% !important;
                     }
                     img.img2-src {
                         z-index: 1;
@@ -196,8 +194,7 @@ class Img2 extends HTMLElement {
                     }
                     img.img2-preview {
                         z-index: 2;
-                        filter: blur(2vw);
-                        transform: scale(1.5);
+                        filter: blur(0.05vw);
                         width: 100%;
                         height: 100%;
                         top: 0;
@@ -208,7 +205,7 @@ class Img2 extends HTMLElement {
                     }
                 </style>
             `;
-            if (window.ShadyCSS) ShadyCSS.prepareTemplate($template, "img-2");
+            if (window.ShadyCSS && ShadyCSS.prepareTemplate) ShadyCSS.prepareTemplate($template, "img-2");
             this._root.appendChild(document.importNode($template.content, true));
         }
 
@@ -219,8 +216,8 @@ class Img2 extends HTMLElement {
             this._$preview.classList.add("img2-preview");
             this._$preview.src = this._preview;
             // Add the specified width and height
-            this._$preview.width = this._width;
-            this._$preview.height = this._height;
+            this._$preview.style.width = "100%";
+            this._$preview.style.height = "100%";
             // Add it to the Shadow Root
             this._root.appendChild(this._$preview);
         }
@@ -231,8 +228,8 @@ class Img2 extends HTMLElement {
             this._$img = document.createElement("img");
             this._$img.classList.add("img2-src");
             // add the specified width and height to the image element
-            this._$img.width = this._width;
-            this._$img.height = this._height;
+            this._$img.style.width = "100%";
+            //this._$img.style.height = "100%";
             const alt = this.getAttribute("alt");
             if (alt !== null) this._$img.setAttribute("alt", alt);
             // Add the image to the Shadow Root
@@ -241,7 +238,6 @@ class Img2 extends HTMLElement {
 
         // Flag as rendered
         this._rendered = true;
-
     }
 
     _precache() {
@@ -249,7 +245,6 @@ class Img2 extends HTMLElement {
         Img2._preCache(this._src, this._onImgPreCached);
     }
 
-    static _preCacheListeners = new Map();
     static _addPreCacheListener(cb, url) {
         Img2._preCacheListeners.set(cb, url);
     }
@@ -266,8 +261,6 @@ class Img2 extends HTMLElement {
      * Methods used to determine when currently visible (priority) elements have finished download to then inform other elements to pre-cache
      */
 
-    static __priorityCount = 0;
-    static _startPreCacheDebounce = null;
     static get _priorityCount() {
         return Img2.__priorityCount;
     }
@@ -280,7 +273,7 @@ class Img2 extends HTMLElement {
                 clearTimeout(Img2._startPreCacheDebounce);
                 Img2._startPreCacheDebounce = null;
             }
-            Img2._startPreCacheDebounce = setTimeout(function(){
+            Img2._startPreCacheDebounce = setTimeout(function () {
                 if (Img2.__priorityCount < 1) Img2._startPreCache();
             }, 500);
         }
@@ -289,12 +282,7 @@ class Img2 extends HTMLElement {
     /**
      * Methods used to determine when this element is in the visible viewport
      */
-    static _intersectListeners = new Map();
-    static _observer = new IntersectionObserver(Img2._handleIntersect, {
-        root: null,
-        rootMargin: "0px",
-        threshold: 0
-    });
+
 
     static addIntersectListener($element, intersectCallback) {
         Img2._intersectListeners.set($element, intersectCallback);
@@ -314,7 +302,6 @@ class Img2 extends HTMLElement {
         });
     }
 
-    static _preCacheCallbacks = {};
     static _preCache(url, cb) {
 
         let slot = Img2._preCacheCallbacks[url];
@@ -323,9 +310,10 @@ class Img2 extends HTMLElement {
                 cached: false,
                 cbs: [cb]
             };
-            const absolute = url.indexOf("http") === 0 || url.indexOf("/") === 0;
-            const location = absolute ? url : window.location.href + url;
-            Img2._worker.postMessage({ location: location, url: url });
+            if(url){
+                const location = url.indexOf("http") > -1 ? url : window.location.href + url;
+                Img2._worker.postMessage({ location: location, url: url });
+            }
         } else {
             if (slot.cached === true) {
                 cb();
@@ -340,18 +328,26 @@ class Img2 extends HTMLElement {
  * Methods used to pre-cache images using a WebWorker
  */
 
-Img2._worker = new Worker(window.URL.createObjectURL(
-    new Blob([`self.onmessage=${function (e) {
-        const xhr = new XMLHttpRequest();
-        function onload() {
-            self.postMessage(e.data.url);
-        }
-        xhr.responseType = "blob";
-        xhr.onload = xhr.onerror = onload;
-        xhr.open("GET", e.data.location, true);
-        xhr.send();
-    }.toString()};`], { type: "text/javascript"})
-));
+Img2._preCacheListeners = new Map();
+Img2.__priorityCount = 0;
+Img2._startPreCacheDebounce = null;
+Img2._intersectListeners = new Map();
+Img2._observer = new IntersectionObserver(Img2._handleIntersect, {
+    root: null,
+    rootMargin: "0px",
+    threshold: 0
+});
+Img2._preCacheCallbacks = {};
+Img2._worker = new Worker(window.URL.createObjectURL(new Blob([`self.onmessage=${ function (e) {
+    const xhr = new XMLHttpRequest();
+    function onload() {
+        self.postMessage(e.data.url);
+    }
+    xhr.responseType = "blob";
+    xhr.onload = xhr.onerror = onload;
+    xhr.open("GET", e.data.location, true);
+    xhr.send();
+}.toString() };`], { type: "text/javascript" })));
 
 Img2._worker.onmessage = function (e) {
     const slot = Img2._preCacheCallbacks[e.data];
