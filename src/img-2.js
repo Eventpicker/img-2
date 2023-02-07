@@ -62,9 +62,6 @@ class Img2 extends HTMLElement {
         // Grab the initial attribute values
         this._preview = this.getAttribute("src-preview");
 
-//############################################ me out comment because of not using
-        //if (!this._src || !this._width || !this._height) return;
-
         // Set the height and width of the element so that we can figure out if it is on the screen or not
         this.style.width = `100%`;
         this.style.height = `100%`;
@@ -314,7 +311,7 @@ class Img2 extends HTMLElement {
                 cbs: [cb]
             };
             if(url){
-                const location = url.indexOf("http") > -1 ? url : window.location.href + url;
+                const location = url.indexOf("http") > -1 ? url : window.location.origin + url;
                 Img2._worker.postMessage({ location: location, url: url });
             }
         } else {
