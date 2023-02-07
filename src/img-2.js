@@ -3,6 +3,9 @@
  * Blog: blog.revillweb.com
  * Twitter: @RevillWeb
  * GitHub: github.com/RevillWeb
+ * 
+ * Modified by: Thomas Brunmüller
+ * 07/02/2023
  */
 class Img2 extends HTMLElement {
 
