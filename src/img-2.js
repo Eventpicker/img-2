@@ -24,6 +24,7 @@ class Img2 extends HTMLElement {
 
         // Settings
         this._renderOnPreCached = Img2.settings.RENDER_ON_PRECACHED;
+        this._renderWithShadowDOM = Img2.settings.RENDER_WITH_SHADOW_DOM;
 
         // Bound class methods
         this._precache = this._precache.bind(this);
@@ -51,7 +52,12 @@ class Img2 extends HTMLElement {
     connectedCallback() {
         if (window.ShadyCSS && ShadyCSS.styleElement) ShadyCSS.styleElement(this);
         // Override any global settings
-        this._renderOnPreCached = this.getAttribute("render-on-pre-cached") === "true";
+        if(this.hasAttribute("render-on-pre-cached")){
+            this._renderOnPreCached = this.getAttribute("render-on-pre-cached") === "true";
+        }
+        if(this.hasAttribute("render-with-shadow-dom")){
+            this._renderWithShadowDOM = this.getAttribute("render-with-shadow-dom") === "true";
+        }
         this._init();
     }
 
@@ -69,7 +75,7 @@ class Img2 extends HTMLElement {
         // Figure out if this image is within view
         Img2.addIntersectListener(this, () => {
             Img2._removePreCacheListener(this._precache);
-            this._render();
+            this._renderWithShadowDOM ? this._renderShadow() : this._render();
             this._load();
             Img2.removeIntersectListener(this);
         });
@@ -105,7 +111,7 @@ class Img2 extends HTMLElement {
         this._preCaching = false;
         this._preCached = true;
         if (this._renderOnPreCached !== false) {
-            this._render();
+            this._renderWithShadowDOM ? this._renderShadow() : this._render();
             this._load();
         }
     }
@@ -124,24 +130,11 @@ class Img2 extends HTMLElement {
                 this._reset();
                 this._init();
                 break;
-            case "width":
-                this._width = newValue;
-
-                if (this._$preview !== null) this._$preview.width = this._width;
-                if (this._$img !== null) this._$img.width = this._width;
-
-                this.style.width = `${ this._width }px`;
-                break;
-            case "height":
-                this._height = newValue;
-
-                if (this._$preview !== null) this._$preview.height = this._height;
-                if (this._$img !== null) this._$img.height = this._height;
-
-                this.style.height = `${ this._height }px`;
-                break;
             case "render-on-pre-cached":
                 this._renderOnPreCached = !(newValue === "false");
+                break;
+            case "render-with-shadow-dom":
+                this._renderWithShadowDOM = !(newValue === "false");
                 break;
             case "alt":
                 this._updateAttribute("alt", newValue);
@@ -169,6 +162,21 @@ class Img2 extends HTMLElement {
 
         if (this._rendered === true) return;
 
+        if (this._root === null) {
+            this._root = this;
+        }
+
+        this._addRenderElements();
+    }
+
+    /**
+     * Method which renders the DOM elements and displays any preview image
+     * @private
+     */
+    _renderShadow() {
+
+        if (this._rendered === true) return;
+
         // Render the Shadow Root if not done already (src change can force this method to be called again)
         if (this._root === null) {
             // Attach the Shadow Root to the element
@@ -185,8 +193,6 @@ class Img2 extends HTMLElement {
                     }
                     img {
                         position: relative;
-                        /* height: 100% !important; wegen ios problem  */
-                        width: 100% !important;
                     }
                     img.img2-src {
                         z-index: 1;
@@ -194,9 +200,6 @@ class Img2 extends HTMLElement {
                     }
                     img.img2-preview {
                         z-index: 2;
-                        filter: blur(0.05vw);
-                        width: 100%;
-                        height: 100%;
                         top: 0;
                         left: 0;
                     }
@@ -209,6 +212,10 @@ class Img2 extends HTMLElement {
             this._root.appendChild(document.importNode($template.content, true));
         }
 
+        this._addRenderElements();
+    }
+
+    _addRenderElements() {
         // If a preview image has been specified
         if (this._$preview === null && this._preview !== null && this._loaded === false) {
             // Create the element
@@ -217,7 +224,7 @@ class Img2 extends HTMLElement {
             this._$preview.src = this._preview;
             // Add the specified width and height
             this._$preview.style.width = "100%";
-            this._$preview.style.height = "100%";
+            this._$preview.style.filter = "blur(0.05vw)";
             // Add it to the Shadow Root
             this._root.appendChild(this._$preview);
         }
@@ -364,7 +371,8 @@ Img2._worker.onmessage = function (e) {
 
 /** Img2 Settings **/
 Img2.settings = {
-    "RENDER_ON_PRECACHED": false // Set this to false to save memory but can cause jank during scrolling
+    "RENDER_ON_PRECACHED": false,   // Set this to false to save memory but can cause jank during scrolling
+    "RENDER_WITH_SHADOW_DOM": false // if the inner DOM of the img-2 element should be a ShadowDOM appended to the real one
 };
 
 window.customElements.define("img-2", Img2);
