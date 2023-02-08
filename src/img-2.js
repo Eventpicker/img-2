@@ -25,6 +25,7 @@ class Img2 extends HTMLElement {
         // Settings
         this._renderOnPreCached = Img2.settings.RENDER_ON_PRECACHED;
         this._renderWithShadowDOM = Img2.settings.RENDER_WITH_SHADOW_DOM;
+        this._renderAll = false;
 
         // Bound class methods
         this._precache = this._precache.bind(this);
@@ -52,9 +53,15 @@ class Img2 extends HTMLElement {
     connectedCallback() {
         if (window.ShadyCSS && ShadyCSS.styleElement) ShadyCSS.styleElement(this);
         // Override any global settings
+        var metaDynamicRenderer = document.querySelector('meta[name="X-DYNAMIC-RENDERER"]');
+        if(metaDynamicRenderer){
+            this._renderAll = metaDynamicRenderer.content === "true";
+        }
+
         if(this.hasAttribute("render-on-pre-cached")){
             this._renderOnPreCached = this.getAttribute("render-on-pre-cached") === "true";
         }
+
         if(this.hasAttribute("render-with-shadow-dom")){
             this._renderWithShadowDOM = this.getAttribute("render-with-shadow-dom") === "true";
         }
@@ -72,16 +79,22 @@ class Img2 extends HTMLElement {
         this.style.width = `100%`;
         this.style.height = `100%`;
 
-        // Figure out if this image is within view
-        Img2.addIntersectListener(this, () => {
-            Img2._removePreCacheListener(this._precache);
+        if(this._renderAll){
+            //render all for SEO purpose ... otherwhise no <img/> Tag is in the HTML DOM
             this._renderWithShadowDOM ? this._renderShadow() : this._render();
             this._load();
-            Img2.removeIntersectListener(this);
-        });
+        }else{
+            // Figure out if this image is within view
+            Img2.addIntersectListener(this, () => {
+                Img2._removePreCacheListener(this._precache);
+                this._renderWithShadowDOM ? this._renderShadow() : this._render();
+                this._load();
+                Img2.removeIntersectListener(this);
+            });
 
-        // Listen for precache instruction
-        Img2._addPreCacheListener(this._precache, this._src);
+            // Listen for precache instruction
+            Img2._addPreCacheListener(this._precache, this._src);
+        }
     }
 
     /**
