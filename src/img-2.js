@@ -17,7 +17,10 @@ class Img2 extends HTMLElement {
         this._$img = null;
         this._$preview = null;
         this._preview = null;
+        this._previewset = null;
         this._src = null;
+        this._srcset = null;
+        this._sizes = null;
         this._width = null;
         this._height = null;
         this._reset();
@@ -72,8 +75,12 @@ class Img2 extends HTMLElement {
 
         // Check to see if we have a src, if not return and do nothing else
         this._src = this.getAttribute("src");
+        this._srcset = this.getAttribute("srcset");
         // Grab the initial attribute values
         this._preview = this.getAttribute("src-preview");
+        this._previewset = this.getAttribute("srcset-preview");
+
+        this._sizes = this.getAttribute("sizes");
 
         // Set the height and width of the element so that we can figure out if it is on the screen or not
         this.style.width = `100%`;
@@ -106,6 +113,8 @@ class Img2 extends HTMLElement {
         this._$img.onload = this._onImgLoad;
         this._loading = true;
         this._$img.src = this._src;
+        if(this._srcset) this._$img.srcset = this._srcset;
+        if(this._sizes) this._$img.sizes = this._sizes;
     }
 
     _onImgLoad() {
@@ -130,7 +139,7 @@ class Img2 extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ["src", "width", "height", "alt"];
+        return ["src","srcset","sizes", "width", "height", "alt"];
     }
     attributeChangedCallback(name, oldValue, newValue) {
 
@@ -139,6 +148,8 @@ class Img2 extends HTMLElement {
 
         switch (name) {
             case "src":
+            case "srcset":
+            case "sizes":
                 // If the src is changed then we need to reset and start again
                 this._reset();
                 this._init();
@@ -235,6 +246,8 @@ class Img2 extends HTMLElement {
             this._$preview = document.createElement("img");
             this._$preview.classList.add("img2-preview");
             this._$preview.src = this._preview;
+            if(this._previewset) this._$preview.srcset = this._previewset;
+            if(this._sizes) this._$preview.sizes = this._sizes;
             // Add the specified width and height
             this._$preview.style.width = "100%";
             this._$preview.style.filter = "blur(0.05vw)";
