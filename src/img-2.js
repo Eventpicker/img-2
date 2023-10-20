@@ -257,6 +257,13 @@ class Img2 extends HTMLElement {
 
         // Render the img element if not done already
         if (this._$img === null) {
+            //rendertron created an <img> tag with src="null" ... this removes it
+            var checkElements = this.getElementsByClassName("img2-src");
+            if(checkElements.length > 0) {
+                for(var i = checkElements.length - 1; i >= 0; i--){
+                    checkElements[i].remove();
+                }
+            }
             // Create the actual image element to be used to display the image
             this._$img = document.createElement("img");
             this._$img.classList.add("img2-src");
