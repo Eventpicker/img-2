@@ -75,6 +75,8 @@ class Img2 extends HTMLElement {
 
         // Check to see if we have a src, if not return and do nothing else
         this._src = this.getAttribute("src");
+        if (!this._src) return;
+
         this._srcset = this.getAttribute("srcset");
         // Grab the initial attribute values
         this._preview = this.getAttribute("src-preview");
